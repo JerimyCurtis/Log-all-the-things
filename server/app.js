@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const app = express();
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const {parse} = require('csv-parse');
 
 const csvWriter = createCsvWriter({
     path: 'log.csv',
@@ -30,36 +31,59 @@ const logEntry = {
   }).catch((error) => {
     console.error('Error writing log entry:', error);
     next();
-  });
+});
+console.log('line 34',logEntry);
 });
 
 app.get('/', (req, res) => {
 // write your code to respond "ok" here
+console.log('Root route assessed')
 res.status(200).send('ok');
 });
 
 app.get('/logs', (req, res) => {
     fs.readFile('log.csv', 'utf8', (error, data) => {
-      if (error) {
-        console.error('Error reading log file:', error);
-        res.status(500).send('Error reading log file');
-        return;
-      }
-  
-      const rows = data.trim().split('\n').map((row) => {
-        const columns = row.split(',');
-        return {
-          agent: columns[0],
-          time: columns[1],
-          method: columns[2],
-          resource: columns[3],
-          version: columns[4],
-          status: columns[5],
-        };
-      });
-  
-      res.status(200).json(rows);
-    });
-  });
+        if (error) {
+            console.error('Error reading log file:', error);
+            res.status(500).send('Error reading log file');
+            return;
+        }
 
+        parse(data, {
+            columns: true,
+            skip_empty_lines: true,
+        }, (parseError, records) =>  {
+            if (parseError) {
+                console.error('Error parsing CSV:', parseError);
+                res.status(500).send('Error processing request');
+            return;
+        }
+        res.status(200).json(records);
+    });
+    });
+});
 module.exports = app;
+
+// app.get('/logs', (req, res) => {
+//     fs.readFile('log.csv', 'utf8', (error, data) => {
+//       if (error) {
+//         console.error('Error reading log file:', error);
+//         res.status(500).send('Error reading log file');
+//         return;
+//       }
+  
+//       const rows = data.trim().split('\n').slice(1).map((row) => {
+//         const columns = row.split(',');
+//         return {
+//           Agent: columns[0],
+//           Time: columns[1],
+//           Method: columns[2],
+//           Resource: columns[3],
+//           Version: columns[4],
+//           Status: columns[5],
+//         };
+//       });
+  
+//       res.status(200).json(rows);
+//     });
+//   });
