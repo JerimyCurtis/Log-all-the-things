@@ -39,8 +39,27 @@ res.status(200).send('ok');
 });
 
 app.get('/logs', (req, res) => {
-// write your code to return a json object containing the log data here
-
-});
+    fs.readFile('log.csv', 'utf8', (error, data) => {
+      if (error) {
+        console.error('Error reading log file:', error);
+        res.status(500).send('Error reading log file');
+        return;
+      }
+  
+      const rows = data.trim().split('\n').map((row) => {
+        const columns = row.split(',');
+        return {
+          agent: columns[0],
+          time: columns[1],
+          method: columns[2],
+          resource: columns[3],
+          version: columns[4],
+          status: columns[5],
+        };
+      });
+  
+      res.status(200).json(rows);
+    });
+  });
 
 module.exports = app;
